@@ -253,7 +253,7 @@ k = 79
 k = 109
 ```
 
-These are unsuitable because they are longer than the read length. The practical asks students to compare different k-mer lengths and explains that k is specified when running `velveth`. :contentReference[oaicite:3]{index=3}
+These are unsuitable because they are longer than the read length. Compare different k-mer lengths and explains that k is specified when running `velveth`. 
 
 ---
 
