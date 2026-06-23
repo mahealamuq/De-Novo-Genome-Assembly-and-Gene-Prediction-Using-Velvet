@@ -212,7 +212,7 @@ Velvet works in two main steps:
 2. **velvetg**  
    Builds and simplifies the de Bruijn graph and generates assembled contigs.
 
-The practical notes describe these two Velvet steps and explain that `velveth` produces `Sequences` and `Roadmaps`, while `velvetg` produces the final assembly outputs including contigs, statistics, and a log file. :contentReference[oaicite:2]{index=2}
+`velveth` produces `Sequences` and `Roadmaps`, while `velvetg` produces the final assembly outputs including contigs, statistics, and a log file. 
 
 ---
 
@@ -292,7 +292,7 @@ Run `velvetg`:
 | `-ins_length 500` | Expected insert size is approximately 500 bp |
 | `-exp_cov 20` | Expected sequencing coverage is 20× |
 
-The practical states that the ERR048385 reads were generated from fragments of approximately 500 bp with expected coverage of 20×. :contentReference[oaicite:4]{index=4}
+The practical states that the ERR048385 reads were generated from fragments of approximately 500 bp with expected coverage of 20×.
 
 ---
 
@@ -366,7 +366,7 @@ Or in R:
 mean(A$short1_cov)
 ```
 
-The practical specifically asks students to use the `contigs.fa`, `stats.txt`, and `Log` files to calculate N50, maximum contig length, total contig length, assembled reads, number of contigs, and coverage statistics. :contentReference[oaicite:5]{index=5}
+The practical specifically asks students to use the `contigs.fa`, `stats.txt`, and `Log` files to calculate N50, maximum contig length, total contig length, assembled reads, number of contigs, and coverage statistics.
 
 ---
 
@@ -490,7 +490,7 @@ The k = 69 assembly produced:
 
 These are important indicators of a more continuous and better-quality genome assembly.
 
-The practical notes explain that shorter k-mers can allow more overlaps and produce many short contigs, while longer k-mers can reduce assembled reads. Therefore, the best assembly requires a balance between N50 and the percentage of assembled reads. :contentReference[oaicite:6]{index=6}
+The practical notes explain that shorter k-mers can allow more overlaps and produce many short contigs, while longer k-mers can reduce assembled reads. Therefore, the best assembly requires a balance between N50 and the percentage of assembled reads.
 
 ---
 
@@ -545,10 +545,13 @@ Important files:
 | `stats.txt` | Contig length and coverage statistics |
 | `Log` | Assembly summary including N50, max contig length, total length, and reads assembled |
 
-The practical identifies these three files as the key outputs to inspect after assembly. :contentReference[oaicite:7]{index=7}
+The practical identifies these three files as the key outputs to inspect after assembly.
 
 ---
 
+This project successfully assembled paired-end Illumina reads using Velvet and compared the effect of two k-mer lengths, k = 59 and k = 69. The k = 69 assembly was selected as the best assembly because it produced a higher N50, a longer maximum contig, and fewer contigs. These results suggest that k = 69 generated a more continuous and less fragmented draft genome assembly, making it more suitable for downstream genome annotation and phylogenomic analysis..
+
+---
 ## Step 18: Future Work
 
 The best assembly can be used for:
@@ -559,10 +562,9 @@ The best assembly can be used for:
 - Phylogenomic analysis
 - Identification of genes potentially acquired by lateral genetic transfer
 
-The practical states that assembled contigs from the best assembly should be used as the draft genome assembly for gene prediction. :contentReference[oaicite:8]{index=8}
+The practical states that assembled contigs from the best assembly should be used as the draft genome assembly for gene prediction. 
 
 ---
 
-## Conclusion
 
 This project successfully assembled paired-end Illumina reads using Velvet and compared the effect of two k-mer lengths, k = 59 and k = 69. The k = 69 assembly was selected as the best assembly because it produced a higher N50, a longer maximum contig, and fewer contigs. These results suggest that k = 69 generated a more continuous and less fragmented draft genome assembly, making it more suitable for downstream genome annotation and phylogenomic analysis..
