@@ -556,7 +556,7 @@ This project successfully assembled paired-end Illumina reads using Velvet and c
 
 The best assembly can be used for:
 
-- Gene prediction using GeneMark
+- Gene prediction using Prodigal
 - Genome annotation
 - BLAST searches
 - Phylogenomic analysis
@@ -565,4 +565,181 @@ The best assembly can be used for:
 The assembled contigs from the best assembly should be used as the draft genome assembly for gene prediction. 
 
 ---
+
+# Gene Prediction from contigs Using Prodigal
+
+## Overview
+
+The prodigal was used to identify protein-coding genes in assembled genome contigs. Prodigal is specifically designed for bacterial and archaeal genomes and is widely used for accurate prediction of protein-coding genes from assembled contigs. It does not require a pre-trained species model and performs gene prediction  directly from the genomic sequence.
+
+---
+
+## Create Gene Prediction Directory
+
+Create a directory for gene prediction analysis and move the assembled contigs into the directory.
+
+```bash
+mkdir Gen_prediction
+
+mv Assembly69/contigs.fa Gen_prediction/
+
+cd Gen_prediction
+```
+
+Rename the assembly file:
+
+```bash
+mv contigs.fa ERR048385_assembled_contigs.fa
+```
+
+---
+
+## Install Prodigal
+
+Create a Conda environment and install Prodigal from Bioconda.
+
+```bash
+conda create -n prodigal_env -c bioconda -c conda-forge prodigal
+
+conda activate prodigal_env
+```
+
+Verify installation:
+
+```bash
+prodigal -v
+```
+
+---
+
+## Predict Protein-Coding Genes
+
+Run Prodigal on the assembled genome contigs.
+
+```bash
+prodigal \
+-i ERR048385_assembled_contigs.fa \
+-o genes.gff \
+-a proteins.faa \
+-d genes.fna
+```
+
+### Output Files
+
+| File           | Description                         |
+| -------------- | ----------------------------------- |
+| `genes.gff`    | Gene coordinates and annotations    |
+| `proteins.faa` | Predicted protein sequences         |
+| `genes.fna`    | Predicted gene nucleotide sequences |
+
+---
+
+# Q7. Gene Prediction Results
+
+## (a) G+C Content of the Genome Contigs
+
+The GC content was calculated directly from the assembled contig sequences.
+
+```bash
+grep -v "^>" ERR048385_assembled_contigs.fa | \
+awk '{gc+=gsub(/[GCgc]/,""); total+=length($0)}
+END{print gc/total*100}'
+```
+
+### Result
+
+```text
+48.5055%
+```
+
+### Interpretation
+
+The assembled genome has a GC content of approximately **48.51%**. GC content is a useful genomic characteristic that can provide insights into genome composition and taxonomic identity.
+
+---
+
+## (b) Total Number of Predicted Genes
+
+Count the number of predicted genes in the nucleotide FASTA file.
+
+```bash
+grep -c "^>" genes.fna
+```
+
+### Result
+
+```text
+2704 genes
+```
+
+### Interpretation
+
+Prodigal predicted **2,704 protein-coding genes** within the assembled genome.
+
+---
+
+## (c) Putative Function of the First Predicted Gene
+
+The first predicted protein sequence was extracted from `proteins.faa` and searched against the NCBI non-redundant protein database using BLASTP.
+
+### Top BLAST Hit
+
+| Feature   | Result                            |
+| --------- | --------------------------------- |
+| Protein   | Site-specific integrase (partial) |
+| Organism  | *Staphylococcus aureus*           |
+| Accession | WP_310651144.1                    |
+
+### Functional Annotation
+
+The first predicted gene was identified as a **site-specific integrase**.
+
+Site-specific integrases are recombinase enzymes that catalyse:
+
+* DNA integration
+* DNA excision
+* Site-specific recombination
+
+These proteins are commonly associated with:
+
+* Bacteriophages
+* Transposons
+* Genomic islands
+* Horizontal gene transfer
+
+Integrases play an important role in genome evolution and the movement of mobile genetic elements between bacterial genomes.
+
+---
+
+## (d) Does the First Predicted Gene Support a Staphylococcus Genome?
+
+### Answer
+
+Yes.
+
+The top BLASTP hit for the first predicted gene was a site-specific integrase from *Staphylococcus aureus*. This strongly supports the hypothesis that the assembled genome is derived from a member of the genus *Staphylococcus*.
+
+Additional evidence supporting this conclusion includes:
+
+* Genome size of approximately **2.87 Mb**
+* Presence of a Staphylococcus-associated integrase gene
+* Gene content consistent with a bacterial genome
+
+Therefore, the gene prediction and BLAST analysis support the conclusion that the assembled genome is likely a **Staphylococcus species**.
+
+---
+
+## Summary of Results
+
+| Question                            | Result                  |
+| ----------------------------------- | ----------------------- |
+| GC content                          | 48.51%                  |
+| Total predicted genes               | 2,704                   |
+| First predicted gene                | Site-specific integrase |
+| Top BLAST organism                  | *Staphylococcus aureus* |
+| Supports Staphylococcus hypothesis? | Yes                     |
+
+---
+
+
 
