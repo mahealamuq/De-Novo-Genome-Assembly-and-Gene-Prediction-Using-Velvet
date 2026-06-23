@@ -2,15 +2,15 @@
 
 ## Project Overview
 
-This repository documents a de novo genome assembly workflow using paired-end Illumina sequencing reads from accession **ERR048385**. The aim of this project is to assemble an unknown bacterial genome without using a reference genome and evaluate the quality of the assembly using Velvet.
+This repository demonstrates de novo genome assembly of Illumina paired-end sequencing data (ERR048385) using Velvet. The workflow includes sequence quality assessment, FASTQ file inspection, de Bruijn graph-based genome assembly, assembly evaluation using multiple k-mer lengths (59 and 69), and comparison of assembly quality metrics such as N50, contig length, coverage, and percentage of reads assembled. The best assembly was selected based on assembly continuity and used as a draft bacterial genome for downstream analyses including gene prediction and genome annotation..
 
-This practical is based on genome assembly and gene prediction, where the main objectives are to:
+This repository is based on genome assembly and gene prediction, where the main objectives are to:
 
 1. Assemble a genome de novo using high-throughput sequencing data.
 2. Assess how different k-mer lengths affect assembly quality.
 3. Use the best assembly for downstream gene prediction and genome annotation.
 
-The original practical uses **Velvet**, a de Bruijn graph-based assembler, to assemble Illumina paired-end reads. The practical also explains that the assembled contigs can later be used for ab initio protein-coding gene prediction using GeneMark.
+
 
 ---
 
