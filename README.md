@@ -10,7 +10,7 @@ This practical is based on genome assembly and gene prediction, where the main o
 2. Assess how different k-mer lengths affect assembly quality.
 3. Use the best assembly for downstream gene prediction and genome annotation.
 
-The original practical uses **Velvet**, a de Bruijn graph-based assembler, to assemble Illumina paired-end reads. The practical also explains that the assembled contigs can later be used for ab initio protein-coding gene prediction using GeneMark. :contentReference[oaicite:0]{index=0}
+The original practical uses **Velvet**, a de Bruijn graph-based assembler, to assemble Illumina paired-end reads. The practical also explains that the assembled contigs can later be used for ab initio protein-coding gene prediction using GeneMark.
 
 ---
 
