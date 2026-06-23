@@ -59,7 +59,7 @@ ERR048385_1.fastq
 ERR048385_2.fastq
 ```
 
-These are paired-end Illumina sequencing reads. The practical notes state that the sequence reads are two FASTQ files and are used for de novo genome assembly with Velvet. :contentReference[oaicite:1]{index=1}
+These are paired-end Illumina sequencing reads. The practical notes state that the sequence reads are two FASTQ files and are used for de novo genome assembly with Velvet. 
 
 ---
 
