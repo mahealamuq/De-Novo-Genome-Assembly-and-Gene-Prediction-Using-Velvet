@@ -634,7 +634,7 @@ prodigal \
 
 ---
 
-# Q7. Gene Prediction Results
+# Gene Prediction Results
 
 ## (a) G+C Content of the Genome Contigs
 
