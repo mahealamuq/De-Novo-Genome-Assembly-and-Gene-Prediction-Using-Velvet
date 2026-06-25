@@ -10,44 +10,6 @@ This repository is based on genome assembly and gene prediction, where the main 
 2. Assess how different k-mer lengths affect assembly quality.
 3. Use the best assembly for downstream gene prediction and genome annotation.
 
-
-
----
-
-## Repository Structure
-
-```text
-de-novo-genome-assembly-velvet/
-│
-├── README.md
-│
-├── raw_data/
-│   ├── ERR048385_1.fastq
-│   └── ERR048385_2.fastq
-│
-├── fastqc/
-│   ├── ERR048385_1_fastqc.html
-│   └── ERR048385_2_fastqc.html
-│
-├── velvet_assembly/
-│   ├── Assembly59/
-│   │   ├── contigs.fa
-│   │   ├── stats.txt
-│   │   └── Log
-│   │
-│   └── Assembly69/
-│       ├── contigs.fa
-│       ├── stats.txt
-│       └── Log
-│
-├── results/
-│   ├── assembly_comparison_table.md
-│   └── best_assembly_summary.md
-│
-└── figures/
-    └── fastq_quality_encoding.png
-```
-
 ---
 
 ## Dataset
@@ -680,7 +642,7 @@ Prodigal predicted **2,704 protein-coding genes** within the assembled genome.
 
 ## (c) Putative Function of the First Predicted Gene
 
-The first predicted protein sequence was extracted from `proteins.faa` and searched against the NCBI non-redundant protein database using BLASTP.
+The first predicted gene sequence was extracted from `genes.fna` and searched against the NCBI non-redundant nucleotide database using BLASTN.
 
 ### Top BLAST Hit
 
@@ -717,7 +679,7 @@ Integrases play an important role in genome evolution and the movement of mobile
 
 Yes.
 
-The top BLASTP hit for the first predicted gene was a site-specific integrase from *Staphylococcus aureus*. This strongly supports the hypothesis that the assembled genome is derived from a member of the genus *Staphylococcus*.
+The top BLASTN hit for the first predicted gene was a site-specific integrase from *Staphylococcus aureus*. This strongly supports the hypothesis that the assembled genome is derived from a member of the genus *Staphylococcus*.
 
 Additional evidence supporting this conclusion includes:
 
@@ -740,6 +702,673 @@ Therefore, the gene prediction and BLAST analysis support the conclusion that th
 | Supports Staphylococcus hypothesis? | Yes                     |
 
 ---
+
+# BINF7001 Practical 5: Phylogenomics
+
+## Project Overview
+
+This project performs phylogenomic analysis of a de novo assembled bacterial genome from Practical 4. The main aim is to identify homologous sequences for two molecular markers and infer evolutionary relationships using Bayesian phylogenetic analysis.
+
+The two markers used were:
+
+* **16S rRNA gene**
+* **AccA protein**, acetyl-CoA carboxylase subunit alpha
+
+The workflow included:
+
+1. Preparing genome contigs, predicted genes, and predicted proteins
+2. Creating local BLAST databases
+3. Searching for 16S rRNA and AccA hits
+4. Extracting the putative 16S rRNA gene and AccA protein
+5. Downloading homologous sequences from NCBI
+6. Performing multiple sequence alignment using MUSCLE
+7. Converting alignments to NEXUS format
+8. Running Bayesian phylogenetic inference using MrBayes
+9. Comparing the 16S rRNA and AccA phylogenetic trees
+
+---
+
+## Repository Structure
+
+```text
+Phylogenomics/
+│
+├── README.md
+├── ERR048385_assembled_contigs.fa
+├── genes.fna
+├── proteins.faa
+│
+├── my_16S.fa
+├── my_AccA.faa
+│
+├── 16S_gene_set.fa
+├── AccA_protein_set.faa
+│
+├── 16S_gene_set.aln
+├── AccA_protein_set.aln
+│
+├── 16S_gene_set.nex
+├── AccA_protein_set.nex
+│
+├── 16S_gene_set.nex.con.tre
+├── AccA_protein_set.nex.con.tre
+│
+├── 16S_clean_named.nwk
+├── AccA_clean_named.nwk
+│
+└── results/
+    ├── 16S_vs_contigs.txt
+    ├── 16S_vs_genes.txt
+    ├── AccA_vs_proteins.txt
+    ├── my_16S_NCBI_hits.txt
+    └── my_AccA_NCBI_hits.txt
+```
+
+---
+
+# Part A: Identification of Homologous Sequences
+
+## 1. Prepare Working Directory
+
+```bash
+mkdir Phylogenomics
+cd Phylogenomics
+```
+
+Copy the files from the gene prediction directory:
+
+```bash
+cp ../Gen_prediction/ERR048385_assembled_contigs.fa .
+cp ../Gen_prediction/genes.fna .
+cp ../Gen_prediction/proteins.faa .
+```
+
+The three FASTA files used were:
+
+| File                             | Description                                       |
+| -------------------------------- | ------------------------------------------------- |
+| `ERR048385_assembled_contigs.fa` | Genome contigs from the best assembly             |
+| `genes.fna`                      | Predicted gene nucleotide sequences from Prodigal |
+| `proteins.faa`                   | Predicted protein sequences from Prodigal         |
+
+---
+
+## 2. Create Local BLAST Databases
+
+```bash
+makeblastdb -in ERR048385_assembled_contigs.fa -dbtype nucl
+makeblastdb -in genes.fna -dbtype nucl
+makeblastdb -in proteins.faa -dbtype prot
+```
+
+These commands create searchable BLAST databases from the genome contigs, predicted genes, and predicted proteins.
+
+---
+
+## 3. BLAST Column Names
+
+The BLAST outputs were saved using `-outfmt 6`, which gives tabular output without headers.
+
+| Column Number | Column Name | Meaning                      |
+| ------------: | ----------- | ---------------------------- |
+|             1 | `qseqid`    | Query sequence ID            |
+|             2 | `sseqid`    | Subject/database sequence ID |
+|             3 | `pident`    | Percentage identity          |
+|             4 | `length`    | Alignment length             |
+|             5 | `mismatch`  | Number of mismatches         |
+|             6 | `gapopen`   | Number of gap openings       |
+|             7 | `qstart`    | Query start position         |
+|             8 | `qend`      | Query end position           |
+|             9 | `sstart`    | Subject start position       |
+|            10 | `send`      | Subject end position         |
+|            11 | `evalue`    | E-value                      |
+|            12 | `bitscore`  | Bit score                    |
+
+---
+
+## 4. Search for 16S rRNA in Genome Contigs
+
+```bash
+blastn \
+-query 16S.fa \
+-db ERR048385_assembled_contigs.fa \
+-outfmt 6 \
+-out results/16S_vs_contigs.txt
+```
+
+### Result
+
+Significant 16S rRNA hits were found in the assembled genome contigs.
+
+The most useful 16S rRNA hit was:
+
+| Metric              | Result                              |
+| ------------------- | ----------------------------------- |
+| Contig              | `NODE_76_length_1557_cov_77.104691` |
+| Alignment length    | approximately 1476 bp               |
+| Percentage identity | approximately 100%                  |
+| E-value             | 0.0                                 |
+| Strand              | Reverse strand                      |
+
+The reverse strand was identified because the subject start coordinate was larger than the subject end coordinate.
+
+---
+
+## 5. Search for 16S rRNA in Predicted Genes
+
+```bash
+blastn \
+-query 16S.fa \
+-db genes.fna \
+-outfmt 6 \
+-out results/16S_vs_genes.txt
+```
+
+### Result
+
+No reliable significant 16S rRNA hit was found in the predicted gene set.
+
+This result is expected because Prodigal predicts protein-coding genes, while 16S rRNA is a non-coding RNA gene. Therefore, 16S rRNA is present in the genome contigs but is not expected to appear in the predicted protein-coding gene file.
+
+---
+
+## 6. Search for AccA Protein in Predicted Proteins
+
+```bash
+blastp \
+-query AccA.fa \
+-db proteins.faa \
+-outfmt 6 \
+-out results/AccA_vs_proteins.txt
+```
+
+### Result
+
+A significant AccA hit was found in the predicted protein set.
+
+| Metric            | Result                                            |
+| ----------------- | ------------------------------------------------- |
+| Predicted protein | `NODE_25_length_256936_cov_16.179901_45`          |
+| Function          | Acetyl-CoA carboxylase biotin carboxylase subunit |
+| Query coverage    | Full-length protein match                         |
+| E-value           | 0.0                                               |
+| Interpretation    | Strong AccA homolog                               |
+
+---
+
+# Q1. Did you find hits in the three searches?
+
+## Answer
+
+Yes, hits were found in the genome contigs and predicted proteins, but no meaningful 16S rRNA hit was found among the predicted genes.
+
+| Search                             | Result          | Explanation                                                                      |
+| ---------------------------------- | --------------- | -------------------------------------------------------------------------------- |
+| 16S rRNA vs genome contigs         | Hit found       | The genome assembly contains a 16S rRNA region                                   |
+| 16S rRNA vs predicted genes        | No reliable hit | 16S rRNA is non-coding and is not predicted by Prodigal as a protein-coding gene |
+| AccA protein vs predicted proteins | Hit found       | AccA is a protein-coding housekeeping gene                                       |
+
+A significant 16S rRNA hit was found on `NODE_76_length_1557_cov_77.104691`, indicating that the assembled genome contains a 16S rRNA gene. However, no significant 16S hit was found among the predicted genes because 16S rRNA is not a protein-coding gene. A significant AccA protein hit was found among the predicted proteins, confirming that the assembled genome encodes AccA.
+
+---
+
+# Extract Putative 16S rRNA and AccA Sequences
+
+## Extract 16S rRNA Gene
+
+The best 16S rRNA hit was on `NODE_76`, approximately from position 77 to 1552 on the reverse strand.
+
+```bash
+seqkit grep -p "NODE_76_length_1557_cov_77.104691" ERR048385_assembled_contigs.fa > NODE_76.fa
+seqkit subseq -r 77:1552 NODE_76.fa | seqkit seq -t DNA -r -p > my_16S.fa
+```
+
+Check:
+
+```bash
+head my_16S.fa
+```
+
+---
+
+## Extract AccA Protein
+
+```bash
+seqkit grep -p "NODE_25_length_256936_cov_16.179901_45" proteins.faa > my_AccA.faa
+```
+
+Check:
+
+```bash
+head my_AccA.faa
+```
+
+---
+
+# Download Homologous 16S rRNA Sequences from NCBI
+
+The selected taxa were:
+
+| Taxon                          | Role                     |
+| ------------------------------ | ------------------------ |
+| *Staphylococcus aureus*        | Close match              |
+| *Staphylococcus epidermidis*   | Related *Staphylococcus* |
+| *Staphylococcus haemolyticus*  | Related *Staphylococcus* |
+| *Staphylococcus saprophyticus* | Related *Staphylococcus* |
+| *Staphylococcus lugdunensis*   | Related *Staphylococcus* |
+| *Bacillus subtilis*            | Outgroup                 |
+
+Download one sequence for each taxon:
+
+```bash
+esearch -db nucleotide -query "Staphylococcus aureus[Organism] 16S ribosomal RNA" \
+| efetch -format fasta | awk '/^>/{if(++n>1)exit} {print}' > Saureus_16S.fa
+
+esearch -db nucleotide -query "Staphylococcus epidermidis[Organism] 16S ribosomal RNA" \
+| efetch -format fasta | awk '/^>/{if(++n>1)exit} {print}' > Sepidermidis_16S.fa
+
+esearch -db nucleotide -query "Staphylococcus haemolyticus[Organism] 16S ribosomal RNA" \
+| efetch -format fasta | awk '/^>/{if(++n>1)exit} {print}' > Shaemolyticus_16S.fa
+
+esearch -db nucleotide -query "Staphylococcus saprophyticus[Organism] 16S ribosomal RNA" \
+| efetch -format fasta | awk '/^>/{if(++n>1)exit} {print}' > Ssaprophyticus_16S.fa
+
+esearch -db nucleotide -query "Staphylococcus lugdunensis[Organism] 16S ribosomal RNA" \
+| efetch -format fasta | awk '/^>/{if(++n>1)exit} {print}' > Slugdunensis_16S.fa
+
+esearch -db nucleotide -query "Bacillus subtilis[Organism] 16S ribosomal RNA" \
+| efetch -format fasta | awk '/^>/{if(++n>1)exit} {print}' > Bacillus_16S.fa
+```
+
+Combine with the assembled genome 16S sequence:
+
+```bash
+cat my_16S.fa \
+Saureus_16S.fa \
+Sepidermidis_16S.fa \
+Shaemolyticus_16S.fa \
+Ssaprophyticus_16S.fa \
+Slugdunensis_16S.fa \
+Bacillus_16S.fa \
+> 16S_gene_set.fa
+```
+
+Check:
+
+```bash
+grep -c "^>" 16S_gene_set.fa
+```
+
+Expected result:
+
+```text
+7
+```
+
+---
+
+# Download Homologous AccA Protein Sequences from NCBI
+
+```bash
+esearch -db protein -query "Staphylococcus aureus[Organism] acetyl-CoA carboxylase biotin carboxylase subunit" \
+| efetch -format fasta | awk '/^>/{if(++n>1)exit} {print}' > Saureus_AccA.faa
+
+esearch -db protein -query "Staphylococcus epidermidis[Organism] acetyl-CoA carboxylase biotin carboxylase subunit" \
+| efetch -format fasta | awk '/^>/{if(++n>1)exit} {print}' > Sepidermidis_AccA.faa
+
+esearch -db protein -query "Staphylococcus haemolyticus[Organism] acetyl-CoA carboxylase biotin carboxylase subunit" \
+| efetch -format fasta | awk '/^>/{if(++n>1)exit} {print}' > Shaemolyticus_AccA.faa
+
+esearch -db protein -query "Staphylococcus saprophyticus[Organism] acetyl-CoA carboxylase biotin carboxylase subunit" \
+| efetch -format fasta | awk '/^>/{if(++n>1)exit} {print}' > Ssaprophyticus_AccA.faa
+
+esearch -db protein -query "Staphylococcus lugdunensis[Organism] acetyl-CoA carboxylase biotin carboxylase subunit" \
+| efetch -format fasta | awk '/^>/{if(++n>1)exit} {print}' > Slugdunensis_AccA.faa
+
+esearch -db protein -query "Bacillus subtilis[Organism] acetyl-CoA carboxylase biotin carboxylase subunit" \
+| efetch -format fasta | awk '/^>/{if(++n>1)exit} {print}' > Bacillus_AccA.faa
+```
+
+Combine:
+
+```bash
+cat my_AccA.faa \
+Saureus_AccA.faa \
+Sepidermidis_AccA.faa \
+Shaemolyticus_AccA.faa \
+Ssaprophyticus_AccA.faa \
+Slugdunensis_AccA.faa \
+Bacillus_AccA.faa \
+> AccA_protein_set.faa
+```
+
+Check:
+
+```bash
+grep -c "^>" AccA_protein_set.faa
+```
+
+Expected result:
+
+```text
+7
+```
+
+---
+
+# Q2. Which BLAST search yielded greater diversity of source organisms?
+
+## Answer
+
+The 16S rRNA BLAST search yielded greater diversity of source organisms.
+
+The 16S rRNA gene is present in almost all bacteria and is highly conserved, so it can identify homologous sequences across a broad range of bacterial taxa. In contrast, the AccA protein search mainly returned close *Staphylococcus* matches because AccA is a conserved housekeeping protein and the query sequence was very similar to *Staphylococcus aureus* AccA.
+
+Therefore, 16S rRNA was better for broad taxonomic diversity, while AccA was more useful for comparing closely related species.
+
+---
+
+# Q3. Based on NCBI BLAST Results
+
+## (a) How long is each query?
+
+| Query         |                Length |
+| ------------- | --------------------: |
+| 16S rRNA gene | approximately 1476 bp |
+| AccA protein  |       453 amino acids |
+
+## (b) What is the top hit organism?
+
+| Query        | Top hit organism        |
+| ------------ | ----------------------- |
+| 16S rRNA     | *Staphylococcus aureus* |
+| AccA protein | *Staphylococcus aureus* |
+
+## (c) Do the top hits belong to the same species?
+
+Yes. Both the 16S rRNA and AccA top hits belong to *Staphylococcus aureus*.
+
+## (d) Do the top hits belong to the same strain?
+
+Not necessarily. The top hits belong to the same species, *Staphylococcus aureus*, but they do not necessarily correspond to the same strain. The 16S rRNA and AccA results may match different reference strains because they come from different databases and different sequence types.
+
+---
+
+# Part B: Inferring Phylogenetic Relationships
+
+## Rename Sequence Headers
+
+Short names were used so that tree labels are readable.
+
+Example for AccA:
+
+```bash
+sed -i 's/>NODE_25_length_256936_cov_16.179901_45.*/>My_AccA/' AccA_protein_set.faa
+sed -i 's/>WP_490684228.1.*/>Saureus/' AccA_protein_set.faa
+sed -i 's/>YFI15416.1.*/>Sepidermidis/' AccA_protein_set.faa
+sed -i 's/>YEU50698.1.*/>Shaemolyticus/' AccA_protein_set.faa
+sed -i 's/>WP_135092699.1.*/>Ssaprophyticus/' AccA_protein_set.faa
+sed -i 's/>WP_490828678.1.*/>Slugdunensis/' AccA_protein_set.faa
+sed -i 's/>WP_327837060.1.*/>Bacillus/' AccA_protein_set.faa
+```
+
+Check:
+
+```bash
+grep "^>" AccA_protein_set.faa
+```
+
+---
+
+## Multiple Sequence Alignment with MUSCLE
+
+### Align 16S rRNA
+
+```bash
+muscle -align 16S_gene_set.fa -output 16S_gene_set.aln
+```
+
+### Align AccA proteins
+
+```bash
+muscle -align AccA_protein_set.faa -output AccA_protein_set.aln
+```
+
+---
+
+## Convert Alignments to NEXUS Format
+
+```bash
+readseq -format=nexus -output=16S_gene_set.nex 16S_gene_set.aln
+readseq -format=nexus -output=AccA_protein_set.nex AccA_protein_set.aln
+```
+
+---
+
+# Q4. How many sequence format options are available in readseq?
+
+## Answer
+
+This depends on the installed version of `readseq`. To check, run:
+
+```bash
+readseq -h
+```
+
+The help menu lists the available input and output sequence formats. Commonly supported formats include FASTA, NEXUS, PHYLIP, GenBank, EMBL, PIR, and others.
+
+---
+
+# Q4. Compare MrBayes command blocks for protein and DNA data
+
+## DNA MrBayes Block
+
+```text
+begin mrbayes;
+    set autoclose=yes;
+    mcmc ngen=1500000 nchains=4 samplefreq=100 burnin=5000;
+    lset nucmodel=4by4 rates=gamma ngammacat=4;
+    sump burnin=5000;
+    sumt burnin=5000 conformat=simple contype=allcompat;
+end;
+```
+
+## Protein MrBayes Block
+
+```text
+begin mrbayes;
+    set autoclose=yes;
+    mcmc ngen=500000 nchains=4 samplefreq=100 burnin=2000;
+    prset aamodel=mixed;
+    lset rates=gamma ngammacat=4;
+    sump burnin=2000;
+    sumt burnin=2000 conformat=simple contype=allcompat;
+end;
+```
+
+## Answer
+
+The obvious difference is the substitution model. The DNA analysis uses a nucleotide model through `lset nucmodel=4by4`, whereas the protein analysis uses an amino acid model through `prset aamodel=mixed`.
+
+Both analyses use:
+
+* MCMC sampling
+* four chains
+* gamma-distributed rate variation
+* burn-in removal
+* posterior probability summary
+* consensus tree generation
+
+However, DNA and protein sequences require different evolutionary models because nucleotides and amino acids evolve differently.
+
+---
+
+# Run MrBayes
+
+Run MrBayes:
+
+```bash
+mb
+```
+
+Inside MrBayes:
+
+```text
+execute 16S_gene_set.nex
+execute AccA_protein_set.nex
+```
+
+---
+
+# Q5. MrBayes Output Files
+
+| Question                                               | File type  | Meaning                         |
+| ------------------------------------------------------ | ---------- | ------------------------------- |
+| (a) Log likelihood for each sampled tree               | `.p`       | Parameter and likelihood values |
+| (b) Phylogenetic tree in each sampled chain            | `.t`       | Sampled trees from the MCMC run |
+| (c) All possible trees sorted by posterior probability | `.trprobs` | Tree probabilities              |
+| (d) Consensus final tree                               | `.con.tre` | Final consensus tree            |
+
+---
+
+# Q6. What parameters need to be changed?
+
+The practical asks for:
+
+* 1,000,000 MCMC generations
+* burn-in after 500,000 generations
+* sampling every 100 generations
+
+Calculation:
+
+```text
+Total samples = 1,000,000 / 100 = 10,000
+Burn-in samples = 500,000 / 100 = 5,000
+```
+
+Therefore, the correct burn-in value is:
+
+```text
+burnin = 5000
+```
+
+The parameters to change are:
+
+```text
+ngen=1000000
+samplefreq=100
+burnin=5000
+```
+
+Correct command:
+
+```text
+mcmc ngen=1000000 nchains=4 samplefreq=100 burnin=5000;
+sump burnin=5000;
+sumt burnin=5000 conformat=simple contype=allcompat;
+```
+
+---
+
+# Tree Visualisation
+
+The MrBayes consensus trees were converted into clean Newick format for viewing in MEGA 12:
+
+| Tree              | File                   |
+| ----------------- | ---------------------- |
+| 16S rRNA tree     | `16S_clean_named.nwk`  |
+| AccA protein tree | `AccA_clean_named.nwk` |
+
+The trees were rooted using **Bacillus** as the outgroup.
+
+---
+
+# Q7. Do the two trees share the same topology?
+
+## Answer
+
+No. The 16S rRNA tree and AccA protein tree do not have exactly the same topology.
+
+Both trees group the *Staphylococcus* species together and separate **Bacillus** as the outgroup, but the internal branching relationships among the *Staphylococcus* species differ.
+
+In the 16S rRNA tree, the assembled 16S sequence clusters closely with *Staphylococcus aureus*. In the AccA protein tree, the predicted AccA sequence clusters more closely with *Staphylococcus epidermidis*.
+
+Therefore, the two trees are similar at the genus level but differ in their detailed topology.
+
+---
+
+## Q7(a). Interpretation of Bayesian posterior probabilities
+
+Bayesian posterior probability indicates support for each internal node. Values close to 1.0 represent strong support, while lower values indicate weaker confidence.
+
+### 16S rRNA tree
+
+| Posterior probability | Interpretation      |
+| --------------------: | ------------------- |
+|                 0.992 | Very strong support |
+|                 0.776 | Moderate support    |
+|                 0.743 | Moderate support    |
+|                 0.434 | Weak support        |
+
+The 16S tree strongly supports the close relationship between the assembled sequence and *Staphylococcus aureus*. However, some deeper relationships have weaker support.
+
+### AccA protein tree
+
+| Posterior probability | Interpretation      |
+| --------------------: | ------------------- |
+|                 0.998 | Very strong support |
+|                 0.998 | Very strong support |
+|                 0.993 | Very strong support |
+|                 0.984 | Very strong support |
+
+The AccA tree has stronger support overall, indicating that the AccA alignment provides clearer phylogenetic signal among the selected taxa.
+
+---
+
+## Q7(b). Which tree has longer branch lengths?
+
+The AccA protein tree has longer branch lengths than the 16S rRNA tree.
+
+This indicates that AccA has accumulated more substitutions and has evolved faster than 16S rRNA. This is expected because 16S rRNA is highly conserved due to its essential role in ribosome function, while protein-coding genes can evolve more rapidly.
+
+---
+
+## Q7(c). If the tree is rooted using your sequence as the outgroup, would interpretation change?
+
+Yes. Rooting the tree using the assembled genome sequence would change the interpretation because the root determines the direction of evolutionary relationships.
+
+The assembled sequence is part of the *Staphylococcus* group, so it is not an appropriate outgroup. **Bacillus** is a better outgroup because it is outside the genus *Staphylococcus* and provides a more biologically meaningful root.
+
+---
+
+# Final Discussion
+
+The BLAST and phylogenetic analyses support the conclusion that the assembled genome is closely related to *Staphylococcus aureus* and belongs to the genus *Staphylococcus*.
+
+The 16S rRNA gene was useful for identifying the organism at the genus/species level because it is highly conserved across bacteria. The AccA protein provided stronger internal node support and longer branch lengths, suggesting it contains more phylogenetic information for resolving relationships among closely related species.
+
+Although the 16S and AccA trees were not identical, both supported the same broad conclusion: the assembled genome is a *Staphylococcus*-like bacterial genome and is clearly separated from the **Bacillus** outgroup.
+
+---
+
+# Conclusion
+
+This practical demonstrated a full phylogenomics workflow using BLAST, MUSCLE, Readseq, MrBayes, and MEGA.
+
+The assembled genome was searched for 16S rRNA and AccA homologs. The putative 16S rRNA gene and AccA protein were extracted and used to identify related sequences from public databases. These sequences were aligned and analysed using Bayesian phylogenetic inference.
+
+Both phylogenetic trees placed the assembled genome within the genus *Staphylococcus*. The results indicate that the genome is most closely related to *Staphylococcus aureus*, although the exact internal topology differs between the 16S rRNA and AccA datasets.
+
+---
+
+# References
+
+* BINF7001 Practical 5 Phylogenomics notes
+* NCBI BLAST
+* MUSCLE multiple sequence alignment
+* Readseq sequence format conversion
+* MrBayes Bayesian phylogenetic inference
+* MEGA 12 tree visualisation
 
 
 
