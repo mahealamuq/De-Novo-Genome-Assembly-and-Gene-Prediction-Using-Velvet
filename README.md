@@ -409,7 +409,7 @@ Use the `contigs.fa`, `stats.txt`, and `Log` files to calculate N50, maximum con
 
 ---
 
-**Step 11: Assembly Results**
+**Assembly Results**
 
 | Metric | k = 59 | k = 69 |
 |---|---:|---:|
