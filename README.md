@@ -1,18 +1,74 @@
-# De Novo Genome Assembly and Gene Prediction Using Velvet
+# Bacterial Genome Assembly, Gene Prediction, and Phylogenomic Analysis
 
-## Project Overview
+ ## 1.Project Overview
 
-This repository demonstrates de novo genome assembly of Illumina paired-end sequencing data (ERR048385) using Velvet. The workflow includes sequence quality assessment, FASTQ file inspection, de Bruijn graph-based genome assembly, assembly evaluation using multiple k-mer lengths (59 and 69), and comparison of assembly quality metrics such as N50, contig length, coverage, and percentage of reads assembled. The best assembly was selected based on assembly continuity and used as a draft bacterial genome for downstream analyses including gene prediction and genome annotation..
+This repository demonstrates a complete bacterial genome analysis workflow using Illumina paired-end sequencing data (ERR048385). The project begins with **de novo genome assembly** using **Velvet**, followed by assembly evaluation and selection of the optimal assembly based on quality metrics. The best assembly is then used for **ab initio gene prediction** with **Prodigal**, functional annotation using **BLAST**, and phylogenomic analysis based on the **16S rRNA gene** and **AccA protein**.
 
-This repository is based on genome assembly and gene prediction, where the main objectives are to:
+The workflow covers the major stages of bacterial genome analysis, including sequence quality assessment, genome assembly, assembly evaluation, gene prediction, homolog identification, multiple sequence alignment, and Bayesian phylogenetic inference. The final phylogenetic trees were generated using **MrBayes** and visualised with **MEGA 12** to investigate the evolutionary relationships between the assembled genome and closely related bacterial species.
 
-1. Assemble a genome de novo using high-throughput sequencing data.
-2. Assess how different k-mer lengths affect assembly quality.
-3. Use the best assembly for downstream gene prediction and genome annotation.
+This repository was developed for  Bioinformatics practical exercises and demonstrates a complete end-to-end bioinformatics pipeline from raw sequencing reads to biological interpretation.
 
 ---
 
-## Dataset
+### Project Objectives
+
+The objectives of this project are to:
+
+1. Assess the quality of Illumina paired-end sequencing reads.
+2. Assemble a bacterial genome de novo using Velvet.
+3. Compare genome assemblies generated with different k-mer lengths.
+4. Evaluate assembly quality using metrics such as N50, contig length, genome size, coverage, and percentage of assembled reads.
+5. Select the optimal genome assembly for downstream analyses.
+6. Predict protein-coding genes using Prodigal.
+7. Calculate genome statistics, including GC content and the number of predicted genes.
+8. Annotate predicted genes using BLAST searches against the NCBI database.
+9. Identify homologous 16S rRNA genes and AccA proteins for phylogenetic analysis.
+10. Perform multiple sequence alignment using MUSCLE.
+11. Construct Bayesian phylogenetic trees using MrBayes.
+12. Visualise and interpret phylogenetic trees using MEGA 12.
+13. Investigate the evolutionary relationship between the assembled genome and closely related *Staphylococcus* species.
+---
+
+## 2. Workflow
+
+```text
+Illumina FASTQ
+      │
+      ▼
+FastQC
+      │
+      ▼
+Velvet Assembly
+      │
+      ▼
+Assembly Evaluation
+      │
+      ▼
+Prodigal Gene Prediction
+      │
+      ▼
+BLAST Annotation
+      │
+      ▼
+Extract 16S rRNA & AccA
+      │
+      ▼
+NCBI BLAST
+      │
+      ▼
+MUSCLE Alignment
+      │
+      ▼
+Readseq
+      │
+      ▼
+MrBayes
+      │
+      ▼
+MEGA Tree Visualization
+```
+
+## 3.Dataset
 
 The dataset used in this project is:
 
@@ -24,6 +80,22 @@ ERR048385_2.fastq
 These are paired-end Illumina sequencing reads. The practical notes state that the sequence reads are two FASTQ files and are used for de novo genome assembly with Velvet. 
 
 ---
+
+## 4. Software Requirements
+
+
+| Software | Version |
+|----------|---------|
+| Ubuntu | 24.04 LTS |
+| Velvet | 1.2.10 |
+| Prodigal | 2.6.3 |
+| BLAST+ | 2.17 |
+| MUSCLE | 5 |
+| Readseq | 2.1 |
+| MrBayes | 3.2 |
+| MEGA | 12 |
+| SeqKit | 2.x |
+| R | 4.6 |
 
 ## Downloading the FASTQ Files
 
