@@ -805,9 +805,24 @@ These commands create searchable BLAST databases from the genome contigs, predic
 
 ---
 
-## 3. BLAST Column Names
 
-The BLAST outputs were saved using `-outfmt 6`, which gives tabular output without headers.
+---
+
+## 4. Search for 16S rRNA in Genome Contigs
+
+```bash
+esearch -db nucleotide -query "Staphylococcus aureus 16S ribosomal RNA" | efetch -format fasta > 16S.fa
+```
+
+```bash
+blastn \
+-query 16S.fa \
+-db ERR048385_assembled_contigs.fa \
+-outfmt 6 \
+-out results/16S_vs_contigs.txt
+```
+
+The BLAST outputs were saved using `-outfmt 6`, which gives tabular output without headers. The columns name for **16S_vs_contigs.txt** file:
 
 | Column Number | Column Name | Meaning                      |
 | ------------: | ----------- | ---------------------------- |
@@ -823,22 +838,29 @@ The BLAST outputs were saved using `-outfmt 6`, which gives tabular output witho
 |            10 | `send`      | Subject end position         |
 |            11 | `evalue`    | E-value                      |
 |            12 | `bitscore`  | Bit score                    |
-
----
-
-## 4. Search for 16S rRNA in Genome Contigs
-
-```bash
-blastn \
--query 16S.fa \
--db ERR048385_assembled_contigs.fa \
--outfmt 6 \
--out results/16S_vs_contigs.txt
-```
-
 ### Result
 
+Finding Best Significant hits from **16S_vs_contigs.txt**
+
+```R
+#Read the table
+blast <- read.table("16S_vs_contigs.txt",header = FALSE,sep = "\t",stringsAsFactors = FALSE)
+
+# Add BLAST outfmt 12 column names
+colnames(blast) <- c( "qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore")
+
+# Filter significant 16S hits
+sig_hits <- subset(blast, evalue == 0 & pident >= 97 & length >= 1000)
+best_hits <- sig_hits[order(-sig_hits$bitscore), ]
+
+# Show best hits
+head(best_hits, )
+```
+
+
 Significant 16S rRNA hits were found in the assembled genome contigs.
+
+
 
 The most useful 16S rRNA hit was:
 
@@ -853,6 +875,7 @@ The most useful 16S rRNA hit was:
 The reverse strand was identified because the subject start coordinate was larger than the subject end coordinate.
 
 ---
+
 
 ## 5. Search for 16S rRNA in Predicted Genes
 
@@ -873,6 +896,12 @@ This result is expected because Prodigal predicts protein-coding genes, while 16
 ---
 
 ## 6. Search for AccA Protein in Predicted Proteins
+
+**Download Staphylococcus aureus AccA protein from NCBI**
+
+```bash
+esearch -db protein -query "Staphylococcus aureus acetyl-CoA carboxylase subunit alpha" | efetch -format fasta > AccA.fa
+```
 
 ```bash
 blastp \
@@ -896,9 +925,7 @@ A significant AccA hit was found in the predicted protein set.
 
 ---
 
-# Q1. Did you find hits in the three searches?
-
-## Answer
+## Q1. Did I find hits in the three searches?
 
 Yes, hits were found in the genome contigs and predicted proteins, but no meaningful 16S rRNA hit was found among the predicted genes.
 
@@ -1147,7 +1174,6 @@ readseq -format=nexus -output=AccA_protein_set.nex AccA_protein_set.aln
 
 # Q4. How many sequence format options are available in readseq?
 
-## Answer
 
 This depends on the installed version of `readseq`. To check, run:
 
@@ -1173,6 +1199,8 @@ begin mrbayes;
 end;
 ```
 
+Append this block to end of 16S_gene_set.nex file
+
 ## Protein MrBayes Block
 
 ```text
@@ -1185,8 +1213,8 @@ begin mrbayes;
     sumt burnin=2000 conformat=simple contype=allcompat;
 end;
 ```
+Append this block to end of AccA_protein_set.nex file
 
-## Answer
 
 The obvious difference is the substitution model. The DNA analysis uses a nucleotide model through `lset nucmodel=4by4`, whereas the protein analysis uses an amino acid model through `prset aamodel=mixed`.
 
@@ -1285,7 +1313,6 @@ The trees were rooted using **Bacillus** as the outgroup.
 
 # Q7. Do the two trees share the same topology?
 
-## Answer
 
 No. The 16S rRNA tree and AccA protein tree do not have exactly the same topology.
 
