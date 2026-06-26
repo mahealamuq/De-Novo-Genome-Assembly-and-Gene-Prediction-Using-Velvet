@@ -97,7 +97,9 @@ These are paired-end Illumina sequencing reads. The practical notes state that t
 | SeqKit | 2.x |
 | R | 4.6 |
 
-## Downloading the FASTQ Files
+## 5. Genome Assembly
+
+### 5.1 Downloading the FASTQ Files
 
 The accession **ERR048385** can be downloaded from the European Nucleotide Archive.
 
@@ -122,9 +124,9 @@ mv ERR048385_1.fastq ERR048385_2.fastq raw_data/
 
 ---
 
-## Step 1: Inspect the FASTQ Files
+### 5.2 Inspect the FASTQ Files
 
-### Count the number of reads
+**Count the number of reads**
 
 ```bash
 grep "^@ERR048385" raw_data/ERR048385_1.fastq | wc -l
@@ -138,7 +140,7 @@ ERR048385_1.fastq = 4,363,304 reads
 ERR048385_2.fastq = 4,363,304 reads
 ```
 
-### Check whether reads are paired-end
+**Check whether reads are paired-end**
 
 ```bash
 head -n 8 raw_data/ERR048385_1.fastq
@@ -158,7 +160,7 @@ Therefore, the reads are **paired-end reads**.
 
 ---
 
-## Step 2: Check Read Length
+**Check Read Length**
 
 ```bash
 sed -n 2p raw_data/ERR048385_1.fastq | wc -L
@@ -174,7 +176,7 @@ Therefore, each read is **75 bp** long.
 
 ---
 
-## Step 3: Identify FASTQ Quality Encoding
+**Identify FASTQ Quality Encoding**
 
 The FASTQ quality string was compared with the standard FASTQ quality encoding chart.
 
@@ -202,7 +204,7 @@ The reads were generated using **Illumina 1.8+ chemistry with Phred+33 encoding*
 
 ---
 
-## Step 4: Quality Control Using FastQC
+## 5.3 Quality Control Using FastQC
 
 Before assembly, read quality was checked using FastQC.
 
@@ -228,13 +230,15 @@ FastQC checks include:
 - GC content
 - Sequence duplication levels
 
-### FastQC Interpretation
+**FastQC Interpretation**
 
 FastQC showed that the reads had high overall quality. Although some tile-level variation was observed, the reads were considered suitable for downstream assembly. Therefore, no trimming was performed.
 
 ---
 
-## Step 5: Why Velvet Was Used
+## 5.4 Velvet
+
+**Why Velvet Was Used**
 
 Velvet is a de novo genome assembler designed for short-read sequencing data. It is suitable for assembling bacterial genomes from Illumina reads.
 
@@ -250,7 +254,7 @@ Velvet works in two main steps:
 
 ---
 
-## Step 6: Install Velvet with Larger K-mer Support
+**Install Velvet with Larger K-mer Support**
 
 The default Velvet installation may only support k-mers up to 31. Since this project uses k = 59 and k = 69, Velvet must be compiled with a larger `MAXKMERLENGTH`.
 
@@ -269,7 +273,7 @@ Check Velvet:
 
 ---
 
-## Step 7: Choosing K-mer Lengths
+**Choosing K-mer Lengths**
 
 The read length is 75 bp, so the k-mer length must be smaller than 75.
 
@@ -291,7 +295,7 @@ These are unsuitable because they are longer than the read length. Compare diffe
 
 ---
 
-## Step 8: Velvet Assembly Using k = 59
+**Velvet Assembly Using k = 59**
 
 Run `velveth`:
 
@@ -312,7 +316,7 @@ Run `velvetg`:
 -exp_cov 20
 ```
 
-### Explanation of flags
+**Explanation of flags**
 
 | Flag / Parameter | Meaning |
 |---|---|
@@ -330,7 +334,7 @@ The ERR048385 reads were generated from fragments of approximately 500 bp with e
 
 ---
 
-## Step 9: Velvet Assembly Using k = 69
+**Velvet Assembly Using k = 69**
 
 Run `velveth`:
 
@@ -353,7 +357,7 @@ Run `velvetg`:
 
 ---
 
-## Step 10: Extract Assembly Statistics
+**Extract Assembly Statistics**
 
 Move into the assembly directory:
 
@@ -361,13 +365,13 @@ Move into the assembly directory:
 cd velvet_assembly/Assembly69
 ```
 
-### Count number of contigs
+**Count number of contigs**
 
 ```bash
 grep -c "^>" contigs.fa
 ```
 
-### Extract N50, maximum contig length, total contig length, and assembled reads
+**Extract N50, maximum contig length, total contig length, and assembled reads**
 
 ```bash
 grep "n50" Log
@@ -375,7 +379,7 @@ grep "max" Log
 grep "total" Log
 ```
 
-### Calculate maximum coverage
+**Calculate maximum coverage**
 
 ```bash
 awk 'NR>1 {print $6}' stats.txt | sort -n | tail -1
@@ -388,7 +392,7 @@ A <- read.table("stats.txt", header=TRUE)
 max(A$short1_cov)
 ```
 
-### Calculate average coverage
+**Calculate average coverage**
 
 ```bash
 awk 'NR>1 {sum+=$6; n++} END {print sum/n}' stats.txt
@@ -404,7 +408,7 @@ Use the `contigs.fa`, `stats.txt`, and `Log` files to calculate N50, maximum con
 
 ---
 
-## Step 11: Assembly Results
+**Step 11: Assembly Results**
 
 | Metric | k = 59 | k = 69 |
 |---|---:|---:|
@@ -420,16 +424,16 @@ Use the `contigs.fa`, `stats.txt`, and `Log` files to calculate N50, maximum con
 
 ---
 
-## Step 12: Calculation of Percentage Reads Assembled
+**Calculation of Percentage Reads Assembled**
 
-### k = 59
+- k = 59
 
 ```text
 Percentage assembled = (7,701,965 / 8,726,608) × 100
                      = 88.26%
 ```
 
-### k = 69
+- k = 69
 
 ```text
 Percentage assembled = (7,237,537 / 8,726,608) × 100
@@ -438,7 +442,7 @@ Percentage assembled = (7,237,537 / 8,726,608) × 100
 
 ---
 
-## Step 13: Coverage Explanation
+**Coverage Explanation**
 
 Coverage means the average number of sequencing reads supporting each base in a contig.
 
@@ -450,7 +454,7 @@ Coverage = total sequenced bases / genome length
 
 A coverage of 69.60× means that each base in the contigs is supported by approximately 70 reads on average.
 
-### Coverage summary for k = 59
+**Coverage summary for k = 59**
 
 ```r
 A <- read.table("stats.txt", header=TRUE)
@@ -477,9 +481,9 @@ The maximum coverage is much higher than the mean. This may occur because repeti
 
 ---
 
-## Step 14: Assembly Evaluation
+## 5.5 Assembly Evaluation
 
-### k = 59 Assembly
+**k = 59 Assembly**
 
 Advantages:
 
@@ -494,7 +498,7 @@ Disadvantages:
 - More contigs: 458
 - More fragmented assembly
 
-### k = 69 Assembly
+**k = 69 Assembly**
 
 Advantages:
 
@@ -510,7 +514,7 @@ Disadvantages:
 
 ---
 
-## Step 15: Which Assembly Is Better?
+**Which Assembly Is Better?**
 
 The **k = 69 assembly** was selected as the best assembly.
 
@@ -528,7 +532,7 @@ The shorter k-mers can allow more overlaps and produce many short contigs, while
 
 ---
 
-## Step 16: Best Assembly Summary
+**Best Assembly Summary**
 
 The best assembly is:
 
@@ -556,7 +560,7 @@ awk 'NR>1 {sum+=$6; n++} END {print sum/n}' stats.txt
 
 ---
 
-## Step 17: Files Produced by Velvet
+## 5.6 Files Produced by Velvet
 
 Each Velvet assembly directory contains:
 
@@ -586,29 +590,16 @@ These three files as the key outputs to inspect after assembly.
 This project successfully assembled paired-end Illumina reads using Velvet and compared the effect of two k-mer lengths, k = 59 and k = 69. The k = 69 assembly was selected as the best assembly because it produced a higher N50, a longer maximum contig, and fewer contigs. These results suggest that k = 69 generated a more continuous and less fragmented draft genome assembly, making it more suitable for downstream genome annotation and phylogenomic analysis..
 
 ---
-## Step 18: Future Work
 
-The best assembly can be used for:
 
-- Gene prediction using Prodigal
-- Genome annotation
-- BLAST searches
-- Phylogenomic analysis
-- Identification of genes potentially acquired by lateral genetic transfer
+# 6. Gene Prediction from contigs Using Prodigal
 
-The assembled contigs from the best assembly should be used as the draft genome assembly for gene prediction. 
-
----
-
-# Gene Prediction from contigs Using Prodigal
-
-## Overview
+## 6.1 Prodigal
 
 The prodigal was used to identify protein-coding genes in assembled genome contigs. Prodigal is specifically designed for bacterial and archaeal genomes and is widely used for accurate prediction of protein-coding genes from assembled contigs. It does not require a pre-trained species model and performs gene prediction  directly from the genomic sequence.
 
----
 
-## Create Gene Prediction Directory
+**Create Gene Prediction Directory**
 
 Create a directory for gene prediction analysis and move the assembled contigs into the directory.
 
@@ -628,7 +619,7 @@ mv contigs.fa ERR048385_assembled_contigs.fa
 
 ---
 
-## Install Prodigal
+**Install Prodigal**
 
 Create a Conda environment and install Prodigal from Bioconda.
 
@@ -646,7 +637,7 @@ prodigal -v
 
 ---
 
-## Predict Protein-Coding Genes
+**Predict Protein-Coding Genes**
 
 Run Prodigal on the assembled genome contigs.
 
@@ -658,7 +649,7 @@ prodigal \
 -d genes.fna
 ```
 
-### Output Files
+**Output Files**
 
 | File           | Description                         |
 | -------------- | ----------------------------------- |
@@ -668,9 +659,9 @@ prodigal \
 
 ---
 
-# Gene Prediction Results
+## 6.2 Gene Prediction Results
 
-## (a) G+C Content of the Genome Contigs
+**G+C Content of the Genome Contigs**
 
 The GC content was calculated directly from the assembled contig sequences.
 
@@ -680,19 +671,19 @@ awk '{gc+=gsub(/[GCgc]/,""); total+=length($0)}
 END{print gc/total*100}'
 ```
 
-### Result
+- Result
 
 ```text
 48.5055%
 ```
 
-### Interpretation
+- Interpretation
 
 The assembled genome has a GC content of approximately **48.51%**. GC content is a useful genomic characteristic that can provide insights into genome composition and taxonomic identity.
 
 ---
 
-## (b) Total Number of Predicted Genes
+**Total Number of Predicted Genes**
 
 Count the number of predicted genes in the nucleotide FASTA file.
 
@@ -700,23 +691,23 @@ Count the number of predicted genes in the nucleotide FASTA file.
 grep -c "^>" genes.fna
 ```
 
-### Result
+- Result
 
 ```text
 2704 genes
 ```
 
-### Interpretation
+- Interpretation**
 
 Prodigal predicted **2,704 protein-coding genes** within the assembled genome.
 
 ---
 
-## (c) Putative Function of the First Predicted Gene
+**Putative Function of the First Predicted Gene**
 
 The first predicted gene sequence was extracted from `genes.fna` and searched against the NCBI non-redundant nucleotide database using BLASTN.
 
-### Top BLAST Hit
+- Top BLAST Hit
 
 | Feature   | Result                            |
 | --------- | --------------------------------- |
@@ -724,7 +715,8 @@ The first predicted gene sequence was extracted from `genes.fna` and searched ag
 | Organism  | *Staphylococcus aureus*           |
 | Accession | WP_310651144.1                    |
 
-### Functional Annotation
+
+## 6.3 Functional Annotation
 
 The first predicted gene was identified as a **site-specific integrase**.
 
@@ -745,13 +737,11 @@ Integrases play an important role in genome evolution and the movement of mobile
 
 ---
 
-## (d) Does the First Predicted Gene Support a Staphylococcus Genome?
+**Does the First Predicted Gene Support a Staphylococcus Genome?**
 
-### Answer
 
-Yes.
 
-The top BLASTN hit for the first predicted gene was a site-specific integrase from *Staphylococcus aureus*. This strongly supports the hypothesis that the assembled genome is derived from a member of the genus *Staphylococcus*.
+Yes, The top BLASTN hit for the first predicted gene was a site-specific integrase from *Staphylococcus aureus*. This strongly supports the hypothesis that the assembled genome is derived from a member of the genus *Staphylococcus*.
 
 Additional evidence supporting this conclusion includes:
 
@@ -763,7 +753,7 @@ Therefore, the gene prediction and BLAST analysis support the conclusion that th
 
 ---
 
-## Summary of Results
+**Summary of Results**
 
 | Question                            | Result                  |
 | ----------------------------------- | ----------------------- |
@@ -775,7 +765,7 @@ Therefore, the gene prediction and BLAST analysis support the conclusion that th
 
 ---
 
-# BINF7001 Practical 5: Phylogenomics
+# 7: Phylogenomics
 
 ## Project Overview
 
