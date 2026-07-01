@@ -203,6 +203,8 @@ These scores fall within the Illumina 1.8+ range of approximately Q0 to Q41.
 **Conclusion:**  
 The reads were generated using **Illumina 1.8+ chemistry with Phred+33 encoding**.
 
+**More info at:** https://en.wikipedia.org/wiki/FASTQ_format
+
 ---
 
 ### 6.3 Quality Control Using FastQC
